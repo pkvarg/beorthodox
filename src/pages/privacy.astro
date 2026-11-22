@@ -1,0 +1,91 @@
+---
+import Layout from "@/layouts/BaseLayout.astro";
+import Section from "@/components/wrapper/Section.astro";
+import ArticleBody from "@/components/content/ArticleBody.astro";
+import Button from "@/components/Button.astro";
+---
+
+<Layout
+  theme="dark"
+  title="Privacy"
+  description="What this site records about visitors, and how to change your choice."
+>
+  <Section paddingTop="small" paddingBottom="large">
+    <ArticleBody title="Privacy" backLabel="Back" backHref="/">
+      <p>
+        You can read everything on this site without giving us any information
+        about yourself. There are no accounts, no forms and no advertising.
+      </p>
+
+      <h2>Who runs this site</h2>
+      <p>
+        The website is run by, and your data is controlled by, Peter Varga,
+        Bratislava, Slovakia. Contact:
+        <a href="mailto:info@pictusweb.sk">info@pictusweb.sk</a>
+      </p>
+      <p>
+        The website serves educational purposes only. It is run by a private
+        individual, not by a registered church or a company.
+      </p>
+
+      <h2>Anonymous analytics</h2>
+      <p>
+        We would like to know which pages are read, so that we can see what is
+        useful. For this we use an analytics tool that we run ourselves at
+        analytics.pictusweb.com. It is not shared with advertising companies.
+      </p>
+      <p>
+        The tool starts only if you choose Accept in the bar at the bottom of
+        the page. If you decline, or do not answer, it is never loaded.
+      </p>
+      <p>When it runs, it records:</p>
+      <ul>
+        <li>which page was opened and when</li>
+        <li>the site you came from, if any</li>
+        <li>your browser, operating system and type of device</li>
+        <li>your language and country</li>
+        <li>technical errors that happen on a page</li>
+      </ul>
+      <p>
+        It does not record your name, your email address or anything you type.
+        It sets no cookies, and it does not follow you to other websites. We
+        cannot tell from it who you are.
+      </p>
+
+      <h2>What is stored in your browser</h2>
+      <p>
+        This site sets no cookies. To remember whether you accepted or declined
+        analytics, it keeps one small entry in your browser’s local storage. It
+        stays on your device and is not sent to us.
+      </p>
+
+      <h2>Your choice</h2>
+      <p>
+        Analytics runs only with your consent, as the General Data Protection
+        Regulation (GDPR) requires, and you can change your mind at any time.
+        The button below brings the bar back.
+      </p>
+      <p>
+        <Button emphasis="secondary" data-consent-reset>
+          Change my choice
+        </Button>
+      </p>
+
+      <h2>Hosting</h2>
+      <p>
+        The site is hosted with a hosting provider in the European Union. Like
+        any web server, it keeps standard access logs for security, which
+        include the IP address of each request. The fonts are served from this
+        site, not from a third party.
+      </p>
+
+      <h2>Your rights</h2>
+      <p>
+        Under the GDPR you may ask what data is held about you, ask for it to be
+        corrected or deleted, and complain to your data protection authority. To
+        use any of these rights, write to{" "}
+        <a href="mailto:info@pictusweb.sk">info@pictusweb.sk</a>.
+      </p>
+    </ArticleBody>
+  </Section>
+</Layout>

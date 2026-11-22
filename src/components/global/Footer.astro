@@ -22,6 +22,9 @@ const { render = true } = Astro.props;
           &copy; <span id="year">{new Date().getFullYear()}</span>&#160;
           {SITE_NAME}
         </p>
+        <a class="footer_link footer_privacy text-style-small" href="/privacy">
+          Privacy
+        </a>
       </div>
     </div>
   </footer>
@@ -101,6 +104,19 @@ const { render = true } = Astro.props;
     .footer_bottom {
       padding-top: var(--space-4);
       border-top: var(--border-width) solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-6);
+    }
+
+    .footer_privacy {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
     }
 
     .footer_copyright {

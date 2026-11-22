@@ -1,0 +1,147 @@
+---
+import Button from "@/components/Button.astro";
+import { ANALYTICS_SCRIPT_URL, ANALYTICS_WEBSITE_ID } from "@/consts.ts";
+
+interface Props {
+  /** Set to `false` to omit the component. */
+  render?: boolean;
+}
+
+const { render = true } = Astro.props;
+---
+
+{render && (
+  <section
+    class="cookie-consent_wrap theme-dark"
+    aria-label="Cookies and analytics"
+    data-consent-bar
+    data-analytics-src={ANALYTICS_SCRIPT_URL}
+    data-website-id={ANALYTICS_WEBSITE_ID}
+    hidden
+  >
+    <div class="cookie-consent_inner">
+      <p class="cookie-consent_text text-style-small">
+        We would like to use anonymous analytics to see which pages are read. It
+        starts only if you accept, it sets no cookies, and it does not tell us
+        who you are. <a href="/privacy">Read more about privacy</a>
+      </p>
+      <div class="cookie-consent_actions">
+        <Button data-consent-choice="accepted">Accept</Button>
+        <Button emphasis="secondary" data-consent-choice="declined">
+          Decline
+        </Button>
+      </div>
+    </div>
+  </section>
+)}
+
+<script>
+  const STORAGE_KEY = "analytics-consent";
+  const bar = document.querySelector<HTMLElement>("[data-consent-bar]");
+
+  const readChoice = () => {
+    try {
+      return window.localStorage.getItem(STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  };
+
+  const writeChoice = (choice: string | null) => {
+    try {
+      if (choice === null) window.localStorage.removeItem(STORAGE_KEY);
+      else window.localStorage.setItem(STORAGE_KEY, choice);
+    } catch {
+      return;
+    }
+  };
+
+  const analyticsLoaded = () =>
+    document.querySelector("script[data-website-id]") !== null;
+
+  const loadAnalytics = () => {
+    const src = bar?.dataset.analyticsSrc;
+    const websiteId = bar?.dataset.websiteId;
+    if (!src || !websiteId || analyticsLoaded()) return;
+    const script = document.createElement("script");
+    script.defer = true;
+    script.src = src;
+    script.dataset.websiteId = websiteId;
+    document.head.append(script);
+  };
+
+  if (bar) {
+    const choice = readChoice();
+    if (choice === "accepted") loadAnalytics();
+    else if (choice !== "declined") bar.hidden = false;
+
+    bar
+      .querySelectorAll<HTMLElement>("[data-consent-choice]")
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          const picked = button.dataset.consentChoice ?? "declined";
+          writeChoice(picked);
+          bar.hidden = true;
+          if (picked === "accepted") loadAnalytics();
+          else if (analyticsLoaded()) window.location.reload();
+        });
+      });
+
+    document
+      .querySelectorAll<HTMLElement>("[data-consent-reset]")
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          writeChoice(null);
+          bar.hidden = false;
+          bar.querySelector<HTMLElement>("[data-consent-choice]")?.focus();
+        });
+      });
+  }
+</script>
+
+<style is:global>
+  @layer components {
+    .cookie-consent_wrap {
+      position: fixed;
+      inset-inline: 0;
+      bottom: 0;
+      z-index: 200;
+      display: flex;
+      justify-content: center;
+      padding: var(--space-4) var(--site-margin);
+      background-color: var(--background-2);
+      color: var(--text);
+      border-top: var(--border-width) solid var(--brand-500);
+      &[hidden] {
+        display: none;
+      }
+    }
+
+    .cookie-consent_inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4) var(--space-6);
+      width: 100%;
+      max-width: var(--max-width-main);
+    }
+
+    .cookie-consent_text {
+      flex: 1 1 20rem;
+      max-width: 44rem;
+      text-box: none;
+      & a {
+        color: var(--brand-500);
+        text-decoration: underline;
+        text-underline-offset: 0.3em;
+      }
+    }
+
+    .cookie-consent_actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+  }
+</style>

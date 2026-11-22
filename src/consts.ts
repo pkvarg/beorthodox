@@ -13,3 +13,7 @@ export const NOINDEX_ROUTES: string[] = [
   "/style-guide",
   "/example-components",
 ];
+/** Analytics script. Loaded only after the visitor accepts in the consent bar. */
+export const ANALYTICS_SCRIPT_URL = "https://analytics.pictusweb.com/script.js";
+/** Website id the analytics script reports under. */
+export const ANALYTICS_WEBSITE_ID = "3a0b52af-85c1-44d3-8854-6050f3a79312";
