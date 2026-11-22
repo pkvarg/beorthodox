@@ -1,0 +1,112 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import RichText from "@/components/typography/RichText.astro";
+import { slotContent } from "@/utils/slots.ts";
+
+type Props = HTMLAttributes<"article"> & {
+  /** Set to `false` to omit the component. */
+  render?: boolean;
+  /** Article title. */
+  title: string;
+  /** Label of the back link. */
+  backLabel: string;
+  /** Back link destination when the visitor did not arrive from this site. */
+  backHref: string;
+};
+
+const {
+  render = true,
+  title,
+  backLabel,
+  backHref,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const content = await slotContent(Astro.slots);
+---
+
+{render && title && content && (
+  <article class:list={["article-body_wrap", className]} {...rest}>
+    <a class="article-body_back text-style-small" href={backHref} data-back>
+      {backLabel}
+    </a>
+    <h1 class="article-body_title text-style-h3">{title}</h1>
+    <RichText variant="large">
+      <Fragment set:html={content} />
+    </RichText>
+    <a class="article-body_back text-style-small" href={backHref} data-back>
+      {backLabel}
+    </a>
+  </article>
+)}
+
+<script>
+  const cameFromThisSite =
+    document.referrer !== "" &&
+    new URL(document.referrer).origin === window.location.origin;
+
+  if (cameFromThisSite) {
+    document
+      .querySelectorAll<HTMLAnchorElement>("[data-back]")
+      .forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          window.history.back();
+        });
+      });
+  }
+</script>
+
+<style is:global>
+  @layer components {
+    .article-body_wrap {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      width: 100%;
+      max-width: 40rem;
+      margin-inline: auto;
+      & h2 {
+        font-size: var(--h4);
+        line-height: var(--h4-line-height);
+      }
+      & p:not([class]) {
+        line-height: var(--line-height-huge);
+      }
+      & p:not(:first-child) {
+        margin-top: var(--space-6);
+      }
+      & h2:not(:first-child) {
+        margin-top: var(--space-8);
+      }
+    }
+
+    .article-body_back {
+      align-self: start;
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+      color: var(--brand-500);
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+      text-decoration-thickness: var(--border-width);
+    }
+
+    .article-body_highlight {
+      padding-block: var(--space-2);
+      font-size: var(--h5);
+      line-height: var(--line-height-large);
+      color: var(--brand-500);
+      text-wrap: balance;
+    }
+
+    .article-body_accent {
+      color: var(--brand-500);
+    }
+
+    .article-body_title {
+      text-wrap: balance;
+    }
+  }
+</style>

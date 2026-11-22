@@ -1,0 +1,22 @@
+---
+import Layout from "@/layouts/BaseLayout.astro";
+import Section from "@/components/wrapper/Section.astro";
+import ContentWrapper from "@/components/wrapper/ContentWrapper.astro";
+import Heading from "@/components/typography/Heading.astro";
+import LibraryMenu from "@/components/content/LibraryMenu.astro";
+---
+
+<Layout
+  theme="dark"
+  title="Library"
+  description="The Be Orthodox library, by category."
+>
+  <Section paddingTop="small" paddingBottom="large" gap="6">
+    <ContentWrapper centered={true}>
+      <Heading variant="h2" tag="h1">
+        Library
+      </Heading>
+    </ContentWrapper>
+    <LibraryMenu />
+  </Section>
+</Layout>

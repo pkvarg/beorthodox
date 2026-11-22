@@ -1,0 +1,90 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { LIBRARY, articleCountLabel } from "@/data/library.ts";
+import { getCategoryArticles } from "@/utils/library.ts";
+
+type Props = HTMLAttributes<"nav"> & {
+  /** Set to `false` to omit the component. */
+  render?: boolean;
+};
+
+const { render = true, class: className, ...rest } = Astro.props;
+
+const categories = await Promise.all(
+  LIBRARY.map(async (category) => {
+    const articles = await getCategoryArticles(category.slug);
+    const [onlyArticle] = articles;
+    return {
+      ...category,
+      count: articles.length,
+      href:
+        articles.length === 1 && onlyArticle
+          ? `/library/${category.slug}/${onlyArticle.id}`
+          : `/library/${category.slug}`,
+    };
+  }),
+);
+---
+
+{render && categories.length > 0 && (
+  <nav
+    class:list={["library-menu_wrap", className]}
+    aria-label="Library"
+    {...rest}
+  >
+    <ul class="library-menu_list">
+      {categories.map((category) => (
+        <li>
+          <a class="library-menu_link" href={category.href}>
+            <span class="library-menu_name text-style-h5">{category.name}</span>
+            <span class="library-menu_count text-style-main">
+              {articleCountLabel(category.count)}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+)}
+
+<style is:global>
+  @layer components {
+    .library-menu_wrap {
+      width: 100%;
+      max-width: 48rem;
+      margin-inline: auto;
+    }
+
+    .library-menu_list {
+      border-top: var(--border-width) solid var(--border);
+    }
+
+    .library-menu_link {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-5);
+      padding-block: var(--space-4);
+      border-bottom: var(--border-width) solid var(--border);
+      transition: color var(--hover-duration) var(--hover-ease);
+      @media (hover: hover) {
+        &:hover {
+          color: var(--brand-500);
+        }
+      }
+    }
+
+    .library-menu_name {
+      min-width: 0;
+      font-family: var(--secondary-family);
+      font-weight: var(--secondary-semibold);
+    }
+
+    .library-menu_count {
+      flex: none;
+      color: var(--brand-500);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+</style>

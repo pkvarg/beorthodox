@@ -1,0 +1,87 @@
+---
+import Layout from "@/layouts/BaseLayout.astro";
+import Section from "@/components/wrapper/Section.astro";
+import ContentWrapper from "@/components/wrapper/ContentWrapper.astro";
+import Heading from "@/components/typography/Heading.astro";
+import Paragraph from "@/components/typography/Paragraph.astro";
+import RichText from "@/components/typography/RichText.astro";
+import ButtonWrapper from "@/components/wrapper/ButtonWrapper.astro";
+import Button from "@/components/Button.astro";
+import {
+  LIBRARY,
+  articleCountLabel,
+  type LibraryCategory,
+} from "@/data/library.ts";
+import { getCategoryArticles } from "@/utils/library.ts";
+
+export function getStaticPaths() {
+  return LIBRARY.map((category) => ({
+    params: { category: category.slug },
+    props: { category },
+  }));
+}
+
+type Props = { category: LibraryCategory };
+
+const { category } = Astro.props;
+const articles = await getCategoryArticles(category.slug);
+const general = articles.filter((article) => !article.data.subcategory);
+const bySubcategory = category.subcategories.map((name) => ({
+  name,
+  articles: articles.filter((article) => article.data.subcategory === name),
+}));
+const articleHref = (id: string) => `/library/${category.slug}/${id}`;
+---
+
+<Layout
+  theme="dark"
+  title={category.name}
+  description={`${category.name}: articles in the Be Orthodox library.`}
+>
+  <Section paddingTop="small" paddingBottom="large" gap="6">
+    <ContentWrapper>
+      <Heading variant="h2" tag="h1">
+        {category.name}
+      </Heading>
+      <Paragraph variant="large">
+        {articles.length === 0
+          ? "No articles yet."
+          : articleCountLabel(articles.length)}
+      </Paragraph>
+    </ContentWrapper>
+    <RichText
+      render={general.length > 0 || bySubcategory.length > 0}
+      variant="large"
+      maxWidth={60}
+    >
+      {general.length > 0 && (
+        <ul>
+          {general.map((article) => (
+            <li>
+              <a href={articleHref(article.id)}>{article.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {bySubcategory.map((subcategory) => (
+        <>
+          <h2 class="text-style-h5">{subcategory.name}</h2>
+          {subcategory.articles.length > 0 && (
+            <ul>
+              {subcategory.articles.map((article) => (
+                <li>
+                  <a href={articleHref(article.id)}>{article.data.title}</a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ))}
+    </RichText>
+    <ButtonWrapper>
+      <Button element="link" href="/library" variant="link">
+        All categories
+      </Button>
+    </ButtonWrapper>
+  </Section>
+</Layout>

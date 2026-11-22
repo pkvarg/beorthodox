@@ -1,0 +1,50 @@
+---
+import { getCollection, render } from "astro:content";
+import Layout from "@/layouts/BaseLayout.astro";
+import Section from "@/components/wrapper/Section.astro";
+import ArticleBody from "@/components/content/ArticleBody.astro";
+import { LIBRARY, type LibraryCategory } from "@/data/library.ts";
+import { getCategoryArticles, type Article } from "@/utils/library.ts";
+
+export async function getStaticPaths() {
+  const articles = await getCollection("articles");
+  return articles.flatMap((article) => {
+    const category = LIBRARY.find(
+      (candidate) => candidate.slug === article.data.category,
+    );
+    return category
+      ? [
+          {
+            params: { category: category.slug, article: article.id },
+            props: { article, category },
+          },
+        ]
+      : [];
+  });
+}
+
+type Props = { article: Article; category: LibraryCategory };
+
+const { article, category } = Astro.props;
+const { Content } = await render(article);
+const siblings = await getCategoryArticles(category.slug);
+const backHref =
+  siblings.length === 1 ? "/#library" : `/library/${category.slug}`;
+---
+
+<Layout
+  theme="dark"
+  title={article.data.title}
+  description={article.data.description}
+  type="article"
+>
+  <Section paddingTop="small" paddingBottom="large">
+    <ArticleBody
+      title={article.data.title}
+      backLabel="Back"
+      backHref={backHref}
+    >
+      <Content />
+    </ArticleBody>
+  </Section>
+</Layout>
