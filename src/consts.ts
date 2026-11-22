@@ -4,7 +4,7 @@ export const SITE_NAME = "Be Orthodox";
 export const SITE_DESCRIPTION =
   "Orthodox: holding the right belief. Worship in spirit and in truth.";
 /** Canonical origin. Resolves canonical URLs, social images, and the sitemap. */
-export const SITE_URL = "https://preview.lumosframework.com";
+export const SITE_URL = "https://beorthodox.pictusweb.sk";
 /** BCP 47 locale tag used to format dates and numbers. */
 export const SITE_LOCALE = "en-US";
 /** Routes excluded from search and the sitemap. Surrounding slashes are ignored. */
