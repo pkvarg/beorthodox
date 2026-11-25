@@ -1,0 +1,1113 @@
+---
+import Button from "@/components/Button.astro";
+
+type Props = {
+  /** Set to `false` to omit the component. */
+  render?: boolean;
+};
+
+const { render = true } = Astro.props;
+
+const scenes = [
+  {
+    heading: "Where is the church?",
+    text: "Many people look for it in a building.",
+  },
+  {
+    heading: "A building never prayed with anyone.",
+    text: "It can make announcements. It cannot sit with you.",
+  },
+  {
+    heading: "The church is people.",
+    text: "Living people, born of God.",
+  },
+  {
+    heading: "Lucia next door. František at work. Dagmar on Thursdays.",
+    text: "People you pray with. That is your church.",
+  },
+  {
+    heading: "One Body, joined to the Head.",
+    text: "Christ is the Head. We are his body, in every city.",
+  },
+];
+
+const articleHref = "/library/who-are-we/what-is-the-church";
+const creditHref = "https://pictusweb.sk";
+const ringDots = Array.from({ length: 12 }, (_, index) => {
+  const angle = (index / 12) * Math.PI * 2;
+  return {
+    x: 160 + Math.cos(angle) * 92,
+    y: 120 + Math.sin(angle) * 62,
+    fill: ["#8e1b12", "#2f5d62", "#b8902f", "#5b6b3a"][index % 4],
+  };
+});
+---
+
+{render && (
+  <section
+    class="church-scene_wrap"
+    aria-label="Who is the church?"
+    data-church-scene
+  >
+    <div class="church-scene_stage">
+      <canvas class="church-scene_canvas" aria-hidden="true"></canvas>
+      <div class="church-scene_panels">
+        {scenes.map((scene, index) => (
+          <div class="church-scene_panel" data-panel={index}>
+            <h2 class="church-scene_heading text-style-h3">{scene.heading}</h2>
+            <p class="church-scene_text text-style-large">{scene.text}</p>
+          </div>
+        ))}
+        <div class="church-scene_panel" data-panel={scenes.length}>
+          <Button element="link" href={articleHref}>
+            Read: What is the church?
+          </Button>
+          <a class="church-scene_credit text-style-small" href={creditHref}>
+            Scene made by pictusweb.sk
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="church-scene_fallback">
+      <svg
+        class="church-scene_picture"
+        viewBox="0 0 320 240"
+        role="img"
+        aria-label="Small round people standing in a ring around a warm light"
+      >
+        <defs>
+          <radialGradient id="church-scene-glow">
+            <stop offset="0" stop-color="#ffd98a" />
+            <stop offset="1" stop-color="#ffd98a" stop-opacity="0" />
+          </radialGradient>
+        </defs>
+        <ellipse
+          cx="160"
+          cy="120"
+          rx="70"
+          ry="50"
+          fill="url(#church-scene-glow)"
+        />
+        <ellipse
+          cx="160"
+          cy="128"
+          rx="92"
+          ry="62"
+          fill="none"
+          stroke="#d7b458"
+          stroke-width="2"
+        />
+        {ringDots.map((dot) => (
+          <g>
+            <rect
+              x={dot.x - 9}
+              y={dot.y - 2}
+              width="18"
+              height="22"
+              rx="9"
+              fill={dot.fill}
+            />
+            <circle cx={dot.x} cy={dot.y - 9} r="9" fill="#f1c9a5" />
+          </g>
+        ))}
+      </svg>
+      <ol class="church-scene_steps">
+        {scenes.map((scene) => (
+          <li>
+            <p class="church-scene_heading text-style-h4">{scene.heading}</p>
+            <p class="church-scene_text text-style-large">{scene.text}</p>
+          </li>
+        ))}
+      </ol>
+      <Button element="link" href={articleHref}>
+        Read: What is the church?
+      </Button>
+    </div>
+  </section>
+)}
+
+<script>
+  import {
+    ACESFilmicToneMapping,
+    AdditiveBlending,
+    BoxGeometry,
+    BufferAttribute,
+    BufferGeometry,
+    CanvasTexture,
+    CapsuleGeometry,
+    CircleGeometry,
+    Color,
+    CylinderGeometry,
+    DirectionalLight,
+    Euler,
+    ExtrudeGeometry,
+    Fog,
+    Group,
+    HemisphereLight,
+    InstancedMesh,
+    LineBasicMaterial,
+    LineSegments,
+    Matrix4,
+    Mesh,
+    MeshBasicMaterial,
+    MeshStandardMaterial,
+    PerspectiveCamera,
+    PlaneGeometry,
+    PointLight,
+    Quaternion,
+    Scene,
+    Shape,
+    SphereGeometry,
+    Sprite,
+    SpriteMaterial,
+    SRGBColorSpace,
+    TorusGeometry,
+    Vector3,
+    WebGLRenderer,
+    DoubleSide,
+  } from "three";
+  import gsap from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import Lenis from "lenis";
+
+  type Point = { x: number; z: number };
+
+  const wrap = document.querySelector<HTMLElement>("[data-church-scene]");
+  const canvas = wrap?.querySelector<HTMLCanvasElement>(".church-scene_canvas");
+  const stage = wrap?.querySelector<HTMLElement>(".church-scene_stage");
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
+
+  const createRenderer = (target: HTMLCanvasElement) => {
+    try {
+      return new WebGLRenderer({ canvas: target, antialias: true });
+    } catch {
+      return null;
+    }
+  };
+
+  const renderer =
+    wrap && canvas && stage && !reducedMotion ? createRenderer(canvas) : null;
+
+  if (wrap && canvas && stage && renderer) {
+    wrap.classList.add("is-animated");
+    startScene(wrap, stage, renderer);
+  }
+
+  function startScene(
+    root: HTMLElement,
+    stageEl: HTMLElement,
+    gl: WebGLRenderer,
+  ) {
+    gsap.registerPlugin(ScrollTrigger);
+
+    const isPhone = window.matchMedia("(width < 48rem)").matches;
+    const count = isPhone ? 12 : 18;
+    const latecomer = count - 1;
+    const ringRadius = 3.2;
+    const panels = Array.from(
+      root.querySelectorAll<HTMLElement>("[data-panel]"),
+    );
+    const panelRanges: [number, number][] = [
+      [0, 0.15],
+      [0.15, 0.35],
+      [0.35, 0.55],
+      [0.55, 0.75],
+      [0.75, 0.92],
+      [0.92, 1],
+    ];
+
+    const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+    const seg = (p: number, a: number, b: number) => clamp01((p - a) / (b - a));
+    const smooth = (t: number) => t * t * (3 - 2 * t);
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+    let seed = 7;
+    const random = () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+
+    gl.setPixelRatio(Math.min(window.devicePixelRatio, isPhone ? 1.5 : 2));
+    gl.outputColorSpace = SRGBColorSpace;
+    gl.toneMapping = ACESFilmicToneMapping;
+
+    const scene = new Scene();
+    scene.background = new Color("#000000");
+    scene.fog = new Fog("#000000", 16, 40);
+
+    const camera = new PerspectiveCamera(40, 1, 0.1, 100);
+    const lookTarget = new Vector3();
+
+    scene.add(new HemisphereLight("#fff3d6", "#14110b", 0.7));
+    const key = new DirectionalLight("#ffe2b0", 1.8);
+    key.position.set(5, 8, 6);
+    scene.add(key);
+    const fill = new DirectionalLight("#8fa6c7", 0.45);
+    fill.position.set(-6, 4, -3);
+    scene.add(fill);
+    const warmLight = new PointLight("#ffc46b", 0, 14, 2);
+    warmLight.position.set(0, 1.4, 0);
+    scene.add(warmLight);
+
+    const floor = new Mesh(
+      new CircleGeometry(40, 64),
+      new MeshStandardMaterial({ color: "#100d08", roughness: 1 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    const titleFont =
+      getComputedStyle(root.querySelector(".church-scene_heading") ?? root)
+        .fontFamily || "serif";
+
+    const textTexture = (
+      width: number,
+      height: number,
+      draw: (context: CanvasRenderingContext2D) => void,
+    ) => {
+      const surface = document.createElement("canvas");
+      surface.width = width;
+      surface.height = height;
+      const context = surface.getContext("2d");
+      if (context) draw(context);
+      const texture = new CanvasTexture(surface);
+      texture.colorSpace = SRGBColorSpace;
+      return texture;
+    };
+
+    const stone = new MeshStandardMaterial({
+      color: "#8d887c",
+      roughness: 0.9,
+    });
+    const gold = new MeshStandardMaterial({
+      color: "#d7b458",
+      roughness: 0.35,
+      metalness: 0.6,
+    });
+
+    const building = new Group();
+    scene.add(building);
+
+    const blockStarts: Vector3[] = [];
+    const blockEnds: Vector3[] = [];
+    const blockSpins: Euler[] = [];
+    for (let row = 0; row < 3; row += 1) {
+      for (let column = 0; column < 4; column += 1) {
+        const start = new Vector3(-1.5 + column, 0.75 + row * 0.9, 0);
+        const outward = new Vector3(start.x, 0, random() * 2 - 0.5).normalize();
+        blockStarts.push(start);
+        blockEnds.push(
+          new Vector3(
+            outward.x * (4 + random() * 3),
+            -3.5,
+            outward.z * (3 + random() * 3),
+          ),
+        );
+        blockSpins.push(
+          new Euler(random() * 3 - 1.5, random() * 3 - 1.5, random() * 3 - 1.5),
+        );
+      }
+    }
+    const blocks = new InstancedMesh(
+      new BoxGeometry(0.98, 0.88, 2),
+      stone,
+      blockStarts.length,
+    );
+    building.add(blocks);
+
+    const columnStarts = [-1.5, -0.5, 0.5, 1.5].map(
+      (x) => new Vector3(x, 1.65, 1.25),
+    );
+    const columns = new InstancedMesh(
+      new CylinderGeometry(0.14, 0.16, 2.7, 16),
+      gold,
+      columnStarts.length,
+    );
+    building.add(columns);
+
+    const roofShape = new Shape();
+    roofShape.moveTo(-2.4, 0);
+    roofShape.lineTo(2.4, 0);
+    roofShape.lineTo(0, 1);
+    roofShape.closePath();
+    const roofGeometry = new ExtrudeGeometry(roofShape, {
+      depth: 2.7,
+      bevelEnabled: false,
+    });
+    roofGeometry.translate(0, 0, -1.4);
+    const roof = new Mesh(roofGeometry, gold);
+    roof.position.set(0, 3, 0);
+    building.add(roof);
+
+    const steps = new Mesh(new BoxGeometry(5, 0.3, 3.2), stone);
+    steps.position.set(0, 0.15, 0.3);
+    building.add(steps);
+
+    const plateTexture = textTexture(512, 128, (context) => {
+      context.fillStyle = "#b8902f";
+      context.fillRect(0, 0, 512, 128);
+      context.strokeStyle = "#5c3d0c";
+      context.lineWidth = 8;
+      context.strokeRect(6, 6, 500, 116);
+      context.fillStyle = "#2a1a10";
+      context.font = `600 58px ${titleFont}`;
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.fillText("INSTITUTION", 256, 68);
+    });
+    const platePivot = new Group();
+    platePivot.position.set(-0.8, 3.62, 1.36);
+    const plate = new Mesh(
+      new BoxGeometry(1.6, 0.4, 0.05),
+      new MeshStandardMaterial({
+        map: plateTexture,
+        metalness: 0.4,
+        roughness: 0.4,
+      }),
+    );
+    plate.position.set(0.8, -0.2, 0);
+    platePivot.add(plate);
+    building.add(platePivot);
+
+    const crackPoints: number[] = [];
+    const crackStarts = [-1.8, -1.05, -0.05, 0.95, 1.75];
+    crackStarts.forEach((startX, index) => {
+      let x = startX;
+      let y = index % 2 === 0 ? 0.3 : 3;
+      const direction = index % 2 === 0 ? 1 : -1;
+      for (let step = 0; step < 7; step += 1) {
+        const nextX = x + (random() - 0.5) * 0.5;
+        const nextY = y + direction * (0.25 + random() * 0.2);
+        crackPoints.push(x, y, 1.02, nextX, nextY, 1.02);
+        x = nextX;
+        y = nextY;
+      }
+    });
+    const crackGeometry = new BufferGeometry();
+    crackGeometry.setAttribute(
+      "position",
+      new BufferAttribute(new Float32Array(crackPoints), 3),
+    );
+    const cracks = new LineSegments(
+      crackGeometry,
+      new LineBasicMaterial({ color: "#ebd184" }),
+    );
+    const crackVertices = crackPoints.length / 3;
+    building.add(cracks);
+
+    const paperTexture = textTexture(256, 320, (context) => {
+      context.fillStyle = "#f2ead8";
+      context.fillRect(0, 0, 256, 320);
+      context.fillStyle = "#2a1a10";
+      context.font = `600 30px ${titleFont}`;
+      context.textAlign = "center";
+      context.fillText("Proclamations", 128, 56);
+      context.fillStyle = "#a89d86";
+      for (let line = 0; line < 9; line += 1) {
+        context.fillRect(30, 96 + line * 22, 196 - (line % 3) * 30, 6);
+      }
+    });
+    const paperCount = 12;
+    const papers = new InstancedMesh(
+      new PlaneGeometry(0.42, 0.52),
+      new MeshStandardMaterial({
+        map: paperTexture,
+        side: DoubleSide,
+        roughness: 1,
+      }),
+      paperCount,
+    );
+    building.add(papers);
+
+    const bodyColors = [
+      "#8e1b12",
+      "#2f5d62",
+      "#b8902f",
+      "#5b6b3a",
+      "#2b3a67",
+      "#6b3a5b",
+      "#c9b79c",
+      "#7a4a2a",
+    ];
+    const skinColors = ["#f1c9a5", "#e0ac85", "#c68a5e", "#8d5a3b", "#f5d6bd"];
+    const bodies = new InstancedMesh(
+      new CapsuleGeometry(0.28, 0.42, 6, 16),
+      new MeshStandardMaterial({ roughness: 0.7 }),
+      count,
+    );
+    const heads = new InstancedMesh(
+      new SphereGeometry(0.26, 24, 16),
+      new MeshStandardMaterial({ roughness: 0.6 }),
+      count,
+    );
+    const eyes = new InstancedMesh(
+      new SphereGeometry(0.035, 8, 8),
+      new MeshBasicMaterial({ color: "#14110b" }),
+      count * 2,
+    );
+    const shadows = new InstancedMesh(
+      new CircleGeometry(0.36, 24),
+      new MeshBasicMaterial({
+        color: "#000000",
+        transparent: true,
+        opacity: 0.55,
+      }),
+      count,
+    );
+    for (let index = 0; index < count; index += 1) {
+      bodies.setColorAt(
+        index,
+        new Color(bodyColors[(index * 3) % bodyColors.length]),
+      );
+      heads.setColorAt(
+        index,
+        new Color(skinColors[(index * 2) % skinColors.length]),
+      );
+    }
+    scene.add(bodies, heads, eyes, shadows);
+
+    const propMeshes = [
+      new Mesh(
+        new CylinderGeometry(0.09, 0.07, 0.12, 16),
+        new MeshStandardMaterial({ color: "#f2ead8", roughness: 0.4 }),
+      ),
+      new Mesh(
+        new BoxGeometry(0.26, 0.32, 0.06),
+        new MeshStandardMaterial({ color: "#2f5d62", roughness: 0.8 }),
+      ),
+      new Mesh(
+        new BoxGeometry(0.24, 0.3, 0.08),
+        new MeshStandardMaterial({ color: "#1d1a16", roughness: 0.6 }),
+      ),
+    ];
+    scene.add(...propMeshes);
+
+    const tagNames = ["Lucia", "František", "Dagmar"];
+    const tags = tagNames.map((name) => {
+      const texture = textTexture(384, 128, (context) => {
+        context.fillStyle = "#d7b458";
+        context.beginPath();
+        context.roundRect(8, 16, 368, 96, 48);
+        context.fill();
+        context.fillStyle = "#2a1a10";
+        context.font = `600 52px ${titleFont}`;
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(name, 192, 68);
+      });
+      const sprite = new Sprite(
+        new SpriteMaterial({
+          map: texture,
+          transparent: true,
+          depthTest: false,
+        }),
+      );
+      sprite.scale.set(1.2, 0.4, 1);
+      scene.add(sprite);
+      return sprite;
+    });
+
+    const glowTexture = textTexture(256, 256, (context) => {
+      const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+      gradient.addColorStop(0, "rgba(255, 217, 138, 1)");
+      gradient.addColorStop(0.35, "rgba(255, 196, 107, 0.45)");
+      gradient.addColorStop(1, "rgba(255, 196, 107, 0)");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 256, 256);
+    });
+    const glow = new Sprite(
+      new SpriteMaterial({
+        map: glowTexture,
+        blending: AdditiveBlending,
+        depthWrite: false,
+        transparent: true,
+      }),
+    );
+    glow.position.set(0, 1.2, 0);
+    scene.add(glow);
+
+    const ringMaterial = new MeshBasicMaterial({
+      color: "#ebd184",
+      transparent: true,
+      opacity: 0,
+    });
+    const ring = new Mesh(
+      new TorusGeometry(ringRadius, 0.035, 8, 120),
+      ringMaterial,
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.62;
+    scene.add(ring);
+
+    const randomPoint = (
+      minRadius: number,
+      maxRadius: number,
+      maxZ: number,
+    ) => {
+      const angle = random() * Math.PI * 2;
+      const radius = lerp(minRadius, maxRadius, random());
+      return {
+        x: Math.cos(angle) * radius,
+        z: Math.min(maxZ, Math.sin(angle) * radius),
+      };
+    };
+    const scatter: Point[] = [];
+    const gather: Point[] = [];
+    const namedSpots: Point[] = [
+      { x: -0.7, z: 4 },
+      { x: 1.2, z: 3.2 },
+      { x: 3.1, z: 2.4 },
+    ];
+    for (let index = 0; index < latecomer; index += 1) {
+      scatter.push(randomPoint(2.4, 6, 3.5));
+      gather.push(namedSpots[index] ?? randomPoint(1.6, 4, 1.8));
+    }
+    const latecomerAngle = 0;
+    const order = gather
+      .map((point, index) => {
+        const angle = Math.atan2(point.z, point.x);
+        return {
+          index,
+          angle: (angle - latecomerAngle + Math.PI * 4) % (Math.PI * 2),
+        };
+      })
+      .sort((a, b) => a.angle - b.angle);
+    const ringSlot: number[] = [];
+    order.forEach((entry, slot) => {
+      ringSlot[entry.index] = slot;
+    });
+    const ringPoint = (angle: number): Point => ({
+      x: Math.cos(angle) * ringRadius,
+      z: Math.sin(angle) * ringRadius,
+    });
+
+    const cameraKeys = [
+      { p: 0, pos: [-1, 2.2, 11], look: [0, 2.2, 0] },
+      { p: 0.15, pos: [1.4, 2.4, 10], look: [0, 2.3, 0] },
+      { p: 0.35, pos: [0.8, 2.5, 8.2], look: [0, 2.2, 0] },
+      { p: 0.55, pos: [0, 4.2, 13], look: [0, 1, 0] },
+      { p: 0.75, pos: [6, 4, 9.5], look: [0, 0.9, 0.6] },
+      { p: 0.92, pos: [0, 10, 7.5], look: [0, 0.4, 0] },
+      { p: 1, pos: [0, 14.5, 0.01], look: [0, 0, 0] },
+    ];
+
+    const matrix = new Matrix4();
+    const quaternion = new Quaternion();
+    const euler = new Euler();
+    const position = new Vector3();
+    const scale = new Vector3();
+    const place = (
+      mesh: InstancedMesh,
+      index: number,
+      x: number,
+      y: number,
+      z: number,
+      rx: number,
+      ry: number,
+      rz: number,
+      sx: number,
+      sy: number,
+      sz: number,
+    ) => {
+      position.set(x, y, z);
+      quaternion.setFromEuler(euler.set(rx, ry, rz));
+      scale.set(sx, sy, sz);
+      matrix.compose(position, quaternion, scale);
+      mesh.setMatrixAt(index, matrix);
+    };
+
+    const placeCamera = (p: number, wide: boolean) => {
+      let index = 0;
+      while (
+        index < cameraKeys.length - 2 &&
+        p > (cameraKeys[index + 1]?.p ?? 1)
+      ) {
+        index += 1;
+      }
+      const from = cameraKeys[index];
+      const to = cameraKeys[index + 1];
+      if (!from || !to) return;
+      const t = smooth(seg(p, from.p, to.p));
+      const pull = isPhone ? lerp(1.8, 1.15, seg(p, 0.85, 1)) : 1;
+      lookTarget.set(
+        lerp(from.look[0] ?? 0, to.look[0] ?? 0, t),
+        lerp(from.look[1] ?? 0, to.look[1] ?? 0, t),
+        lerp(from.look[2] ?? 0, to.look[2] ?? 0, t),
+      );
+      camera.position.set(
+        lerp(from.pos[0] ?? 0, to.pos[0] ?? 0, t),
+        lerp(from.pos[1] ?? 0, to.pos[1] ?? 0, t),
+        lerp(from.pos[2] ?? 0, to.pos[2] ?? 0, t),
+      );
+      camera.position
+        .sub(lookTarget)
+        .multiplyScalar(wide ? pull : pull * 1.1)
+        .add(lookTarget);
+      camera.lookAt(lookTarget);
+    };
+
+    const personAt = (index: number, p: number) => {
+      const ringTurn = smooth(seg(p, 0.92, 1)) * 0.7;
+      const toRing = smooth(seg(p, 0.76, 0.82));
+      const pushApart = smooth(seg(p, 0.84, 0.89));
+      const slot = index === latecomer ? count - 1 : (ringSlot[index] ?? 0);
+      const hop = seg(p, 0.895 + slot * 0.0015, 0.925 + slot * 0.0015);
+      let x = 0;
+      let y = 0;
+      let z = 0;
+      let squash = 0;
+      let visible = false;
+      let facing = 0;
+
+      if (index === latecomer) {
+        const run = seg(p, 0.83, 0.885);
+        if (p >= 0.83) {
+          visible = true;
+          const target = ringPoint(latecomerAngle);
+          x = lerp(11, target.x, run);
+          z = lerp(-5, target.z, run);
+          y = run < 1 ? Math.abs(Math.sin(run * Math.PI * 9)) * 0.25 : 0;
+          facing =
+            run < 1
+              ? Math.atan2(target.x - 11, target.z + 5)
+              : Math.atan2(-x, -z);
+        }
+      } else {
+        const popStart = 0.385 + index * (0.1 / latecomer);
+        const pop = seg(p, popStart, popStart + 0.055);
+        const land = seg(p, popStart + 0.055, popStart + 0.075);
+        const from = scatter[index] ?? { x: 0, z: 0 };
+        const to = gather[index] ?? { x: 0, z: 0 };
+        if (p >= popStart) {
+          visible = true;
+          x = lerp(0, from.x, pop);
+          z = lerp(0, from.z, pop);
+          y = lerp(1, 0, pop) + Math.sin(Math.PI * pop) * 2.2;
+          squash = Math.sin(Math.PI * land) * 0.25;
+          const delay = (index % 5) * 0.006;
+          const walk = smooth(seg(p, 0.56 + delay, 0.7 + delay));
+          x = lerp(x, to.x, walk);
+          z = lerp(z, to.z, walk);
+          if (walk > 0 && walk < 1)
+            y += Math.abs(Math.sin(walk * Math.PI * 6)) * 0.12;
+          const ringA = ringPoint(
+            latecomerAngle + ((slot + 0.5) * Math.PI * 2) / (count - 1),
+          );
+          const ringB = ringPoint(
+            latecomerAngle + ((slot + 1) * Math.PI * 2) / count,
+          );
+          x = lerp(x, lerp(ringA.x, ringB.x, pushApart), toRing);
+          z = lerp(z, lerp(ringA.z, ringB.z, pushApart), toRing);
+          if (toRing > 0 && toRing < 1)
+            y += Math.abs(Math.sin(toRing * Math.PI * 4)) * 0.1;
+          facing = lerp(((index % 5) - 2) * 0.12, Math.atan2(-x, -z), toRing);
+        }
+      }
+
+      if (toRing > 0) {
+        const cos = Math.cos(ringTurn);
+        const sin = Math.sin(ringTurn);
+        const rx = x * cos - z * sin;
+        const rz = x * sin + z * cos;
+        x = rx;
+        z = rz;
+        if (toRing === 1) facing = Math.atan2(-x, -z);
+      }
+      y += Math.sin(Math.PI * hop) * 0.45;
+      return { x, y, z, squash, visible, facing };
+    };
+
+    const resize = () => {
+      const width = stageEl.clientWidth;
+      const height = stageEl.clientHeight;
+      if (width === 0 || height === 0) return;
+      gl.setSize(width, height, false);
+      camera.aspect = width / height;
+      if (width / height > 1.1) {
+        camera.setViewOffset(width, height, -width * 0.18, 0, width, height);
+      } else {
+        camera.setViewOffset(width, height, 0, height * 0.16, width, height);
+      }
+      camera.updateProjectionMatrix();
+    };
+
+    const state = { p: 0 };
+    const draw = (time: number) => {
+      const p = state.p;
+      const wide = camera.aspect > 1.1;
+      placeCamera(p, wide);
+
+      const shake = smooth(seg(p, 0.15, 0.35)) * (1 - seg(p, 0.35, 0.38));
+      building.rotation.y = lerp(-0.2, 0.08, seg(p, 0, 0.35));
+      building.rotation.z = Math.sin(p * 220) * 0.035 * shake;
+      building.position.x = Math.sin(p * 310) * 0.04 * shake;
+      building.scale.y = 1 - 0.06 * Math.sin(Math.PI * seg(p, 0.33, 0.35));
+
+      blockStarts.forEach((start, index) => {
+        const t = smooth(seg(p, 0.355 + index * 0.004, 0.47 + index * 0.004));
+        const end = blockEnds[index] ?? start;
+        const spin = blockSpins[index] ?? euler;
+        place(
+          blocks,
+          index,
+          lerp(start.x, end.x, t),
+          lerp(start.y, end.y, t) + Math.sin(Math.PI * t) * 2.4,
+          lerp(start.z, end.z, t),
+          spin.x * t,
+          spin.y * t,
+          spin.z * t,
+          1,
+          1,
+          1,
+        );
+      });
+      blocks.instanceMatrix.needsUpdate = true;
+
+      columnStarts.forEach((start, index) => {
+        const t = smooth(seg(p, 0.36 + index * 0.01, 0.46 + index * 0.01));
+        const side = start.x < 0 ? -1 : 1;
+        place(
+          columns,
+          index,
+          start.x + side * t * 4,
+          start.y - t * 5 + Math.sin(Math.PI * t) * 1.6,
+          start.z + t * 2.5,
+          t * 1.4,
+          0,
+          -side * t * 1.2,
+          1,
+          1,
+          1,
+        );
+      });
+      columns.instanceMatrix.needsUpdate = true;
+
+      const roofFall = smooth(seg(p, 0.35, 0.47));
+      roof.position.set(
+        0,
+        3 + Math.sin(Math.PI * roofFall) * 1.8 - roofFall * 7,
+        -roofFall * 2,
+      );
+      roof.rotation.set(-roofFall * 0.9, roofFall * 0.6, 0);
+      steps.position.y = 0.15 - smooth(seg(p, 0.42, 0.5)) * 1.2;
+
+      cracks.visible = p > 0.16 && p < 0.37;
+      const crackShown =
+        Math.floor((crackVertices / 2) * seg(p, 0.17, 0.33)) * 2;
+      cracks.geometry.setDrawRange(0, crackShown);
+
+      const swing = seg(p, 0.2, 0.32);
+      const fall = smooth(seg(p, 0.32, 0.35));
+      const sink = seg(p, 0.4, 0.48);
+      platePivot.rotation.set(
+        -fall * Math.PI * 0.5,
+        0,
+        -smooth(swing) * 0.9 * (1 - fall) +
+          Math.sin(p * 160) * 0.12 * swing * (1 - fall),
+      );
+      platePivot.position.set(
+        -0.8,
+        lerp(3.62, 0.36, fall) - sink * 2,
+        lerp(1.36, 2.2, fall),
+      );
+
+      for (let index = 0; index < paperCount; index += 1) {
+        const leave = 0.17 + index * 0.013;
+        const t = seg(p, leave, leave + 0.06);
+        const visible = t < 1;
+        place(
+          papers,
+          index,
+          1.6 + t * (2.5 + (index % 4) * 0.8),
+          0.32 + index * 0.012 + t * 3.5 + Math.sin(t * Math.PI * 3) * 0.3,
+          1.4 + t * (1.5 + (index % 3)),
+          -Math.PI / 2 + t * 6,
+          (index % 5) * 0.3,
+          Math.sin(t * 8) * 0.8,
+          visible ? 1 : 0,
+          visible ? 1 : 0,
+          visible ? 1 : 0,
+        );
+      }
+      papers.instanceMatrix.needsUpdate = true;
+
+      for (let index = 0; index < count; index += 1) {
+        const person = personAt(index, p);
+        const size = person.visible ? 1 : 0;
+        const breathe = 1 + Math.sin(time * 2 + index) * 0.02;
+        const named = index < 3;
+        const waveTime = named
+          ? seg(p, 0.6 + index * 0.035, 0.66 + index * 0.035)
+          : 0;
+        const wave =
+          waveTime > 0 && waveTime < 1
+            ? Math.sin(waveTime * Math.PI * 4) * 0.22
+            : 0;
+        const bodyY = person.y + 0.5 * (1 - person.squash);
+        place(
+          bodies,
+          index,
+          person.x,
+          bodyY,
+          person.z,
+          0,
+          person.facing,
+          wave,
+          size * (1 + person.squash),
+          size * (1 - person.squash) * breathe,
+          size * (1 + person.squash),
+        );
+        const headY = person.y + 1.2 * (1 - person.squash);
+        place(
+          heads,
+          index,
+          person.x,
+          headY,
+          person.z,
+          0,
+          person.facing,
+          0,
+          size,
+          size,
+          size,
+        );
+
+        const forwardX = Math.sin(person.facing);
+        const forwardZ = Math.cos(person.facing);
+        const blink = (time * 0.9 + index * 0.37) % 3.5 < 0.12 ? 0.15 : 1;
+        [-0.09, 0.09].forEach((offset, side) => {
+          place(
+            eyes,
+            index * 2 + side,
+            person.x + forwardX * 0.23 + forwardZ * offset,
+            headY + 0.04,
+            person.z + forwardZ * 0.23 - forwardX * offset,
+            0,
+            person.facing,
+            0,
+            size,
+            size * blink,
+            size,
+          );
+        });
+
+        const shadowSize = size * Math.max(0.3, 1 - person.y * 0.35);
+        place(
+          shadows,
+          index,
+          person.x,
+          0.01,
+          person.z,
+          -Math.PI / 2,
+          0,
+          0,
+          shadowSize,
+          shadowSize,
+          shadowSize,
+        );
+
+        const prop = propMeshes[index];
+        if (named && prop) {
+          prop.visible = person.visible;
+          prop.position.set(
+            person.x + forwardZ * 0.36 + forwardX * 0.12,
+            person.y + 0.62,
+            person.z - forwardX * 0.36 + forwardZ * 0.12,
+          );
+          prop.rotation.set(0, person.facing, 0);
+          const tag = tags[index];
+          if (tag) {
+            const show =
+              seg(p, 0.6 + index * 0.035, 0.63 + index * 0.035) *
+              (1 - seg(p, 0.75, 0.78));
+            tag.material.opacity = show;
+            tag.visible = show > 0;
+            tag.position.set(person.x, headY + 0.65, person.z);
+          }
+        }
+      }
+      [bodies, heads, eyes, shadows].forEach((mesh) => {
+        mesh.instanceMatrix.needsUpdate = true;
+      });
+
+      const lightUp = smooth(seg(p, 0.68, 0.78));
+      const pulse = Math.sin(Math.PI * seg(p, 0.94, 1));
+      warmLight.intensity = lightUp * 14 + pulse * 10;
+      const glowSize = lightUp * 3.6 + pulse * 1.2;
+      glow.scale.set(glowSize, glowSize, 1);
+      glow.visible = glowSize > 0.01;
+      ringMaterial.opacity = seg(p, 0.86, 0.91);
+      ring.visible = ringMaterial.opacity > 0;
+      ring.rotation.z = smooth(seg(p, 0.92, 1)) * 0.7;
+
+      panels.forEach((panel, index) => {
+        const range = panelRanges[index] ?? [0, 0];
+        const fade = 0.025;
+        const fadeIn =
+          range[0] === 0 ? (p >= 0 ? 1 : 0) : seg(p, range[0], range[0] + fade);
+        const fadeOut =
+          range[1] === 1
+            ? p <= 1
+              ? 1
+              : 0
+            : 1 - seg(p, range[1] - fade, range[1]);
+        const inside = p >= range[0] && p <= range[1];
+        const opacity = inside ? Math.min(fadeIn, fadeOut) : 0;
+        panel.style.opacity = String(opacity);
+        panel.style.transform = `translateY(${(1 - opacity) * 1}rem)`;
+        panel.style.visibility = opacity > 0.01 ? "visible" : "hidden";
+      });
+
+      gl.render(scene, camera);
+    };
+
+    let onScreen = true;
+    new IntersectionObserver((entries) => {
+      onScreen = entries.some((entry) => entry.isIntersecting);
+    }).observe(root);
+
+    const lenis = new Lenis();
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((time) => {
+      lenis.raf(time * 1000);
+      if (onScreen) draw(time);
+    });
+    gsap.ticker.lagSmoothing(0);
+
+    gsap.to(state, {
+      p: 1,
+      ease: "none",
+      scrollTrigger: {
+        trigger: root,
+        start: () => `top ${parseFloat(getComputedStyle(stageEl).top) || 0}px`,
+        end: "bottom bottom",
+        scrub: 0.8,
+      },
+    });
+
+    resize();
+    draw(0);
+    new ResizeObserver(() => {
+      resize();
+      ScrollTrigger.refresh();
+    }).observe(stageEl);
+    document.fonts.ready.then(() => ScrollTrigger.refresh());
+  }
+</script>
+
+<style is:global>
+  @layer components {
+    .church-scene_wrap {
+      position: relative;
+      background-color: #000000;
+      color: var(--text);
+
+      &.is-animated {
+        height: 600svh;
+        & .church-scene_fallback {
+          display: none;
+        }
+        & .church-scene_stage {
+          display: block;
+        }
+      }
+    }
+
+    .church-scene_stage {
+      display: none;
+      position: sticky;
+      top: var(--nav-height);
+      height: calc(100svh - var(--nav-height));
+      overflow: hidden;
+    }
+
+    .church-scene_canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .church-scene_panels {
+      position: absolute;
+      inset: auto var(--site-margin) var(--space-6);
+      display: grid;
+      pointer-events: none;
+
+      &::before {
+        content: "";
+        position: absolute;
+        inset: -8rem calc(var(--site-margin) * -1) calc(var(--space-6) * -1);
+        background-image: linear-gradient(to bottom, transparent, #000000 55%);
+        z-index: -1;
+      }
+
+      @media (width >= 48rem) {
+        inset: 50% auto auto var(--site-margin);
+        transform: translateY(-50%);
+        width: min(30rem, 40vw);
+        &::before {
+          display: none;
+        }
+      }
+    }
+
+    .church-scene_panel {
+      grid-area: 1 / 1;
+      display: flex;
+      flex-direction: column;
+      align-items: start;
+      gap: var(--space-4);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: auto;
+    }
+
+    .church-scene_heading {
+      text-wrap: balance;
+    }
+
+    .church-scene_text {
+      color: var(--text-2);
+    }
+
+    .church-scene_credit {
+      color: var(--brand-500);
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+      min-height: 2.75rem;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .church-scene_fallback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-6);
+      padding: var(--section-space-small) var(--site-margin);
+      text-align: center;
+    }
+
+    .church-scene_picture {
+      width: 100%;
+      max-width: 26rem;
+      height: auto;
+    }
+
+    .church-scene_steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-6);
+      max-width: 34rem;
+      & li {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+      }
+    }
+  }
+</style>
