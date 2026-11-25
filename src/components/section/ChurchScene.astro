@@ -398,29 +398,80 @@ const ringDots = Array.from({ length: 12 }, (_, index) => {
     const crackVertices = crackPoints.length / 3;
     building.add(cracks);
 
-    const paperTexture = textTexture(256, 320, (context) => {
-      context.fillStyle = "#f2ead8";
-      context.fillRect(0, 0, 256, 320);
-      context.fillStyle = "#2a1a10";
-      context.font = `600 30px ${titleFont}`;
-      context.textAlign = "center";
-      context.fillText("Proclamations", 128, 56);
-      context.fillStyle = "#a89d86";
-      for (let line = 0; line < 9; line += 1) {
-        context.fillRect(30, 96 + line * 22, 196 - (line % 3) * 30, 6);
+    const notices = [
+      "DOCTRINES",
+      "DOGMAS",
+      "PRACTICES",
+      "RITES",
+      "RULES",
+      "TRADITIONS",
+      "CANONS",
+      "DECREES",
+      "TITLES",
+      "CEREMONIES",
+      "HIERARCHY",
+      "COUNCILS",
+      "STATUTES",
+      "CALENDAR",
+      "PROCEDURES",
+    ];
+    const fitText = (
+      context: CanvasRenderingContext2D,
+      text: string,
+      weight: number,
+      size: number,
+      maxWidth: number,
+    ) => {
+      let fontSize = size;
+      context.font = `${weight} ${fontSize}px ${titleFont}`;
+      while (context.measureText(text).width > maxWidth && fontSize > 12) {
+        fontSize -= 2;
+        context.font = `${weight} ${fontSize}px ${titleFont}`;
       }
+    };
+    const papers = notices.map((notice) => {
+      const texture = textTexture(384, 495, (context) => {
+        context.fillStyle = "#f4ecd9";
+        context.fillRect(0, 0, 384, 495);
+        context.strokeStyle = "#8e1b12";
+        context.lineWidth = 5;
+        context.strokeRect(16, 16, 352, 463);
+        context.fillStyle = "#2a1a10";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        fitText(context, "OUR", 600, 36, 320);
+        context.fillText("OUR", 192, 74);
+        fitText(context, notice, 700, 58, 320);
+        context.fillText(notice, 192, 128);
+        context.fillStyle = "#b7ab92";
+        for (let line = 0; line < 8; line += 1) {
+          context.fillRect(52, 190 + line * 26, 280 - (line % 3) * 45, 8);
+        }
+        context.fillStyle = "#8e1b12";
+        context.beginPath();
+        context.arc(292, 428, 33, 0, Math.PI * 2);
+        context.fill();
+      });
+      const paper = new Mesh(
+        new PlaneGeometry(1, 1.29),
+        new MeshStandardMaterial({
+          map: texture,
+          side: DoubleSide,
+          roughness: 1,
+        }),
+      );
+      paper.visible = false;
+      scene.add(paper);
+      return paper;
     });
-    const paperCount = 12;
-    const papers = new InstancedMesh(
-      new PlaneGeometry(0.42, 0.52),
-      new MeshStandardMaterial({
-        map: paperTexture,
-        side: DoubleSide,
-        roughness: 1,
-      }),
-      paperCount,
-    );
-    building.add(papers);
+
+    const doorLocal = new Vector3(0, 1.4, 1.05);
+    const forward = new Vector3();
+    const right = new Vector3();
+    const up = new Vector3(0, 1, 0);
+    const readSpot = new Vector3();
+    const exitSpot = new Vector3();
+    const doorWorld = new Vector3();
 
     const bodyColors = [
       "#8e1b12",
@@ -814,25 +865,50 @@ const ringDots = Array.from({ length: 12 }, (_, index) => {
         lerp(1.36, 2.2, fall),
       );
 
-      for (let index = 0; index < paperCount; index += 1) {
-        const leave = 0.17 + index * 0.013;
-        const t = seg(p, leave, leave + 0.06);
-        const visible = t < 1;
-        place(
-          papers,
-          index,
-          1.6 + t * (2.5 + (index % 4) * 0.8),
-          0.32 + index * 0.012 + t * 3.5 + Math.sin(t * Math.PI * 3) * 0.3,
-          1.4 + t * (1.5 + (index % 3)),
-          -Math.PI / 2 + t * 6,
-          (index % 5) * 0.3,
-          Math.sin(t * 8) * 0.8,
-          visible ? 1 : 0,
-          visible ? 1 : 0,
-          visible ? 1 : 0,
-        );
-      }
-      papers.instanceMatrix.needsUpdate = true;
+      building.updateMatrixWorld();
+      building.localToWorld(doorWorld.copy(doorLocal));
+      forward.copy(lookTarget).sub(camera.position).normalize();
+      right.crossVectors(forward, up).normalize();
+      papers.forEach((paper, index) => {
+        const lead = index < 5;
+        const leave = lead
+          ? 0.155 + index * 0.024
+          : 0.26 + (index - 5) * 0.0065;
+        const t = seg(p, leave, leave + (lead ? 0.05 : 0.045));
+        paper.visible = t > 0 && t < 1;
+        if (!paper.visible) return;
+        const spread = lead ? 0 : index - 5;
+        const sideways = wide
+          ? lead
+            ? 0.7 + (index % 2) * 0.35
+            : -0.4 + ((spread * 0.37) % 1) * 2.8
+          : lead
+            ? 0
+            : -0.6 + ((spread * 0.41) % 1) * 1.2;
+        const lift = lead
+          ? (index % 2) * 0.3 - 0.15
+          : -0.9 + ((spread * 0.53) % 1) * 1.9;
+        readSpot
+          .copy(camera.position)
+          .addScaledVector(forward, (wide ? 4 : 6.5) + (lead ? 0 : 1.2))
+          .addScaledVector(right, sideways)
+          .addScaledVector(up, lift);
+        exitSpot
+          .copy(readSpot)
+          .addScaledVector(right, 4)
+          .addScaledVector(up, 2.5);
+        const arrive = smooth(seg(t, 0, 0.5));
+        const leaveFrame = seg(t, 0.78, 1);
+        paper.position.lerpVectors(doorWorld, readSpot, arrive);
+        paper.position.y += Math.sin(Math.PI * arrive) * 1.2;
+        paper.position.lerp(exitSpot, leaveFrame * leaveFrame);
+        paper.lookAt(camera.position);
+        const flutter = 1 - smooth(seg(t, 0.3, 0.5)) + leaveFrame;
+        paper.rotateZ(Math.sin(t * 9 + index) * 0.4 * flutter);
+        paper.rotateX(-0.9 * Math.min(1, flutter));
+        const grow = Math.min(1, 0.25 + arrive);
+        paper.scale.set(grow, grow, grow);
+      });
 
       for (let index = 0; index < count; index += 1) {
         const person = personAt(index, p);
@@ -1006,7 +1082,7 @@ const ringDots = Array.from({ length: 12 }, (_, index) => {
       color: var(--text);
 
       &.is-animated {
-        height: 600svh;
+        height: 700svh;
         & .church-scene_fallback {
           display: none;
         }
