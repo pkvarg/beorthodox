@@ -22,7 +22,7 @@ const scenes = [
     text: "Living people, born of God.",
   },
   {
-    heading: "Lucia next door. František at work. Dagmar on Thursdays.",
+    heading: "Anna next door. Tom at work. Maria on Thursdays.",
     text: "People you pray with. That is your church.",
   },
   {
@@ -32,7 +32,6 @@ const scenes = [
 ];
 
 const articleHref = "/library/who-are-we/what-is-the-church";
-const creditHref = "https://pictusweb.sk";
 const ringDots = Array.from({ length: 12 }, (_, index) => {
   const angle = (index / 12) * Math.PI * 2;
   return {
@@ -62,9 +61,6 @@ const ringDots = Array.from({ length: 12 }, (_, index) => {
           <Button element="link" href={articleHref}>
             Read: What is the church?
           </Button>
-          <a class="church-scene_credit text-style-small" href={creditHref}>
-            Scene made by pictusweb.sk
-          </a>
         </div>
       </div>
     </div>
@@ -536,7 +532,7 @@ const ringDots = Array.from({ length: 12 }, (_, index) => {
     ];
     scene.add(...propMeshes);
 
-    const tagNames = ["Lucia", "František", "Dagmar"];
+    const tagNames = ["Anna", "Tom", "Maria"];
     const tags = tagNames.map((name) => {
       const texture = textTexture(384, 128, (context) => {
         context.fillStyle = "#d7b458";
@@ -1148,15 +1144,6 @@ const ringDots = Array.from({ length: 12 }, (_, index) => {
 
     .church-scene_text {
       color: var(--text-2);
-    }
-
-    .church-scene_credit {
-      color: var(--brand-500);
-      text-decoration: underline;
-      text-underline-offset: 0.3em;
-      min-height: 2.75rem;
-      display: inline-flex;
-      align-items: center;
     }
 
     .church-scene_fallback {

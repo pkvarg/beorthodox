@@ -15,11 +15,10 @@ Three-word pitch: **scroll, crack, gather.**
   "Everyone wants to be right". The hero, articles and design stay as they are.
 - **Humour stays kind.** The joke is on a generic building and its paperwork,
   never on a named church, person or practice. No crosses, mitres or vestments.
-- **Showcase line:** the last scene carries a small, separate credit,
-  "Scene made by pictusweb.sk", linking to `https://pictusweb.sk`. This is how
-  the scene invites people to want a website. Remove it if unwanted.
-- **Names:** Lucia, František and Dagmar appear as name tags, as in the article
-  "What is the church?". They are first names only.
+- **No credit line:** the last scene carries only the button; the pictusweb.sk
+  credit was removed on request.
+- **Names:** Anna, Tom and Maria appear as name tags: simple, made-up first
+  names.
 - **Branch:** `feature/3d-church-scene`. Nothing is deployed until it is merged.
 
 ## 1. Tech stack
@@ -44,9 +43,9 @@ through that pinned section.
 | 1 | 0–15% | Front, slightly below, slow drift right | One heavy grey stone building with gold columns, a pediment and a brass plate reading "INSTITUTION". Rotates a few degrees. A stack of paper "Proclamations" sits on the steps. | **Where is the church?** / Many people look for it in a building. | Building starts to shiver. |
 | 2 | 15–35% | Small push in | Building wobbles (scrubbed shake, growing). Cracks (thin gold lines) spread up the walls. Papers fly off the stack one by one and flutter away. The brass plate tilts and swings on one screw. | **A building never prayed with anyone.** / It can make announcements. It cannot sit with you. | Plate falls off. Building jolts. |
 | 3 | 35–55% | Pull back to wide | Building splits into ~12 blocks that tumble apart and sink below the floor. Out of the middle pop ~18 small round people (body + head, dot eyes), bouncing up in a staggered wave, blinking. | **The church is people.** / Living people, born of God. | People start walking toward the centre. |
-| 4 | 55–75% | Slow orbit to three-quarter view | People wander inward. Three of them step forward with floating name tags: Lucia (holding a teacup), František (holding a book), Dagmar (holding a Bible). Each waves when its tag appears. | **Lucia next door. František at work. Dagmar on Thursdays.** / People you pray with. That is your church. | A warm light rises in the centre. |
+| 4 | 55–75% | Slow orbit to three-quarter view | People wander inward. Three of them step forward with floating name tags: Anna (holding a teacup), Tom (holding a book), Maria (holding a Bible). Each waves when its tag appears. | **Anna next door. Tom at work. Maria on Thursdays.** / People you pray with. That is your church. | A warm light rises in the centre. |
 | 5 | 75–92% | Rises above, looking down at 45° | Everyone forms a ring around a soft warm light and joins hands. The gap closes, then one latecomer runs in from the edge and squeezes into the circle, pushing the others apart a little. Everyone does one small hop. | **One Body, joined to the Head.** / Christ is the Head. We are his body, in every city. | Camera keeps rising. |
-| 6 | 92–100% | Top-down, ring fills the frame | The ring rotates slowly; the light pulses once. | Button: **Read: What is the church?** → `/library/who-are-we/what-is-the-church` · small credit: *Scene made by pictusweb.sk* | Pin releases into the next section. |
+| 6 | 92–100% | Top-down, ring fills the frame | The ring rotates slowly; the light pulses once. | Button: **Read: What is the church?** → `/library/who-are-we/what-is-the-church` | Pin releases into the next section. |
 
 ## 3. Reversal behaviour
 
@@ -70,17 +69,16 @@ announcements. It cannot sit with you."
 
 Scene 3. Headline: "The church is people." Sub: "Living people, born of God."
 
-Scene 4. Headline: "Lucia next door. František at work. Dagmar on Thursdays."
+Scene 4. Headline: "Anna next door. Tom at work. Maria on Thursdays."
 Sub: "People you pray with. That is your church."
 
 Scene 5. Headline: "One Body, joined to the Head." Sub: "Christ is the Head. We
 are his body, in every city."
 
-Scene 6. Button: "Read: What is the church?" Credit: "Scene made by
-pictusweb.sk".
+Scene 6. Button: "Read: What is the church?"
 
 3D labels: "INSTITUTION" (brass plate), "Proclamations" (paper stack), name
-tags "Lucia", "František", "Dagmar".
+tags "Anna", "Tom", "Maria".
 
 ## 5. Performance budget
 

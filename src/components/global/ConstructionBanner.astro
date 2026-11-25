@@ -1,0 +1,52 @@
+---
+type Props = {
+  /** Set to `false` to omit the component. */
+  render?: boolean;
+};
+
+const { render = true } = Astro.props;
+---
+
+{render && (
+  <aside class="construction-banner_wrap" aria-label="Site status">
+    <p class="construction-banner_text text-style-small">
+      This site is under construction. So are we.{" "}
+      <span class="construction-banner_verse">(Phil 1:6)</span>
+    </p>
+  </aside>
+)}
+
+<style is:global>
+  @layer components {
+    .construction-banner_wrap {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      padding: var(--space-2) var(--site-margin) calc(var(--space-2) + 0.5rem);
+      background-color: #000000;
+      color: var(--brand-500);
+      text-align: center;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0;
+        height: 0.5rem;
+        background-image: repeating-linear-gradient(
+          -45deg,
+          var(--brand-500) 0 0.75rem,
+          #000000 0.75rem 1.5rem
+        );
+      }
+    }
+
+    .construction-banner_text {
+      text-box: none;
+    }
+
+    .construction-banner_verse {
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+  }
+</style>
